@@ -39,53 +39,50 @@
         <div class="state-msg">載入中⋯</div>
     </div>
 
-    <!-- 新增按鈕 -->
-    <button class="btn-add" id="add-btn">
-        <span>＋</span> 新增睡眠記錄
-    </button>
-
-</main>
-
-<!-- Modal：新增 / 編輯 -->
-<div class="modal-overlay" id="modal">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h2 class="modal-title" id="modal-title">新增睡眠記錄</h2>
-            <button class="modal-close" id="modal-close" title="關閉">✕</button>
+    <!-- 輸入表單（直接嵌入首頁） -->
+    <div class="form-section" id="form-section">
+        <div class="form-section-header">
+            <span id="form-title" class="form-title-text">新增記錄</span>
+            <button type="button" class="btn-cancel-edit" id="cancel-edit" style="display:none">✕ 取消編輯</button>
         </div>
 
         <form id="record-form" novalidate>
-
-            <div class="form-group">
-                <label class="form-label" for="session-number">第幾次睡眠</label>
-                <select class="form-control" id="session-number" required>
-                    <option value="1">第 1 次</option>
-                    <option value="2">第 2 次</option>
-                    <option value="3">第 3 次</option>
-                    <option value="4">第 4 次</option>
-                </select>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label class="form-label" for="session-number">第幾次睡眠</label>
+                    <select class="form-control" id="session-number" required>
+                        <option value="1">第 1 次</option>
+                        <option value="2">第 2 次</option>
+                        <option value="3">第 3 次</option>
+                        <option value="4">第 4 次</option>
+                    </select>
+                </div>
+                <div class="form-group logical-date-group">
+                    <label class="form-label">邏輯日</label>
+                    <div id="logical-date-info" class="logical-date-display">—</div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label" for="sleep-start">睡著時間</label>
-                <input class="form-control" type="datetime-local" id="sleep-start" required>
-                <div id="logical-date-info"></div>
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label class="form-label" for="sleep-start">睡著時間</label>
+                    <input class="form-control" type="datetime-local" id="sleep-start" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="sleep-end">起床時間 <span class="optional">（可留空）</span></label>
+                    <input class="form-control" type="datetime-local" id="sleep-end">
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label" for="sleep-end">起床時間 <span style="color:var(--faint);font-weight:400">（可留空，之後補填）</span></label>
-                <input class="form-control" type="datetime-local" id="sleep-end">
-                <div id="duration-preview" class="duration-preview"></div>
-            </div>
+            <div id="duration-preview" class="duration-preview"></div>
 
             <div class="form-footer">
-                <button type="button" class="btn btn-ghost" id="modal-cancel">取消</button>
-                <button type="submit" class="btn btn-primary" id="submit-btn">儲存</button>
+                <button type="submit" class="btn btn-primary" id="submit-btn">儲存記錄</button>
             </div>
-
         </form>
     </div>
-</div>
+
+</main>
 
 <!-- Toast 通知 -->
 <div class="toast" id="toast"></div>
