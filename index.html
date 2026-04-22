@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>睡眠記錄</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+</head>
+<body>
+
+<header class="app-header">
+    <div class="header-inner">
+        <div class="app-title">🌙 睡眠記錄</div>
+        <a href="monthly.html" class="nav-link">月報 →</a>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- 日期導航 -->
+    <div class="date-nav">
+        <button class="btn-nav" id="prev-day" title="前一天">‹</button>
+        <div class="date-nav-center">
+            <div id="current-date">—</div>
+            <button class="btn-today" id="today-btn" style="display:none">回到今天</button>
+        </div>
+        <button class="btn-nav" id="next-day" title="後一天" disabled>›</button>
+    </div>
+
+    <!-- 今日總時長 -->
+    <div class="total-card">
+        <span class="total-label">今日總睡眠</span>
+        <span id="total-duration">—</span>
+    </div>
+
+    <!-- 記錄列表 -->
+    <div class="records-list" id="records-container">
+        <div class="state-msg">載入中⋯</div>
+    </div>
+
+    <!-- 新增按鈕 -->
+    <button class="btn-add" id="add-btn">
+        <span>＋</span> 新增睡眠記錄
+    </button>
+
+</main>
+
+<!-- Modal：新增 / 編輯 -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modal-title">新增睡眠記錄</h2>
+            <button class="modal-close" id="modal-close" title="關閉">✕</button>
+        </div>
+
+        <form id="record-form" novalidate>
+
+            <div class="form-group">
+                <label class="form-label" for="session-number">第幾次睡眠</label>
+                <select class="form-control" id="session-number" required>
+                    <option value="1">第 1 次</option>
+                    <option value="2">第 2 次</option>
+                    <option value="3">第 3 次</option>
+                    <option value="4">第 4 次</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="sleep-start">睡著時間</label>
+                <input class="form-control" type="datetime-local" id="sleep-start" required>
+                <div id="logical-date-info"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="sleep-end">起床時間 <span style="color:var(--faint);font-weight:400">（可留空，之後補填）</span></label>
+                <input class="form-control" type="datetime-local" id="sleep-end">
+                <div id="duration-preview" class="duration-preview"></div>
+            </div>
+
+            <div class="form-footer">
+                <button type="button" class="btn btn-ghost" id="modal-cancel">取消</button>
+                <button type="submit" class="btn btn-primary" id="submit-btn">儲存</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- Toast 通知 -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/db.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

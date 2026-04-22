@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月報 — 睡眠記錄</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+</head>
+<body>
+
+<header class="app-header">
+    <div class="header-inner">
+        <div class="app-title">🌙 睡眠記錄</div>
+        <a href="index.html" class="nav-link">← 今日記錄</a>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- 月份導航 -->
+    <div class="month-nav">
+        <button class="btn-nav" id="prev-month" title="上個月">‹</button>
+        <div id="current-month">—</div>
+        <button class="btn-nav" id="next-month" title="下個月">›</button>
+    </div>
+
+    <!-- 統計摘要 -->
+    <div id="month-summary"></div>
+
+    <!-- 長條圖 -->
+    <div class="chart-section">
+        <div class="section-title">每日睡眠時數</div>
+        <div class="chart-wrap">
+            <canvas id="sleep-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- 月報表格 -->
+    <div class="table-section">
+        <div style="padding: 0.875rem 1rem 0.5rem;">
+            <div class="section-title">詳細記錄</div>
+        </div>
+        <div class="table-scroll">
+            <table class="month-table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>第 1 次</th>
+                        <th>第 2 次</th>
+                        <th>第 3 次</th>
+                        <th>第 4 次</th>
+                        <th>當日合計</th>
+                    </tr>
+                </thead>
+                <tbody id="month-table-body">
+                    <tr><td colspan="6" class="state-msg">載入中⋯</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/db.js"></script>
+<script src="js/monthly.js"></script>
+</body>
+</html>
