@@ -73,7 +73,10 @@ function renderTable(records) {
 
     const rows = sortedDates.map(date => {
         const dayRecs = byDate[date].sort((a, b) => a.session_number - b.session_number);
-        const dayTotal = dayRecs.reduce((s, r) => s + (r.duration_minutes || 0), 0);
+        const dayTotal = dayRecs.reduce((s, r) => {
+            const effective = (r.duration_minutes || 0) - (r.interruption_minutes || 0);
+            return s + Math.max(effective, 0);
+        }, 0);
         totalMonthMin += dayTotal;
         dailyTotals.push(dayTotal);
 
@@ -117,7 +120,8 @@ function renderChart(records) {
 
     const byDate = {};
     records.forEach(r => {
-        byDate[r.logical_date] = (byDate[r.logical_date] || 0) + (r.duration_minutes || 0);
+        const effective = Math.max((r.duration_minutes || 0) - (r.interruption_minutes || 0), 0);
+        byDate[r.logical_date] = (byDate[r.logical_date] || 0) + effective;
     });
 
     const lastDay = new Date(curYear, curMonth, 0).getDate();

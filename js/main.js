@@ -10,10 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('record-form').addEventListener('submit', handleSubmit);
     document.getElementById('sleep-start').addEventListener('input', onStartChange);
     document.getElementById('sleep-end').addEventListener('input', updateDurationPreview);
+    document.getElementById('interruption-minutes').addEventListener('input', updateDurationPreview);
 
     // 2. 初始化 UI
     updateDateDisplay();
     document.getElementById('sleep-start').value = nowLocalInput();
+    document.getElementById('interruption-minutes').value = '0';
     onStartChange();
 
     // 3. 非同步載入資料
@@ -88,13 +90,22 @@ function renderRecords(records) {
         return;
     }
 
-    const totalMin = records.reduce((s, r) => s + (r.duration_minutes || 0), 0);
+    const totalMin = records.reduce((s, r) => {
+        const effective = (r.duration_minutes || 0) - (r.interruption_minutes || 0);
+        return s + Math.max(effective, 0);
+    }, 0);
     totalEl.textContent = totalMin > 0 ? formatDuration(totalMin) : '（有未完成記錄）';
 
     const colors = ['#818cf8', '#34d399', '#fb923c', '#f472b6'];
     container.innerHTML = records.map(r => {
         const color = colors[(r.session_number - 1) % colors.length];
         const sleeping = !r.sleep_end;
+        const interrupt = r.interruption_minutes || 0;
+        const effectiveMins = r.duration_minutes != null ? r.duration_minutes - interrupt : null;
+        const durText = sleeping ? '—'
+            : interrupt > 0
+                ? `${formatDuration(r.duration_minutes)} − ${interrupt}分 = ${formatDuration(effectiveMins)}`
+                : formatDuration(r.duration_minutes);
         return `
         <div class="record-card ${sleeping ? 'sleeping' : ''} ${editingId === r.id ? 'editing' : ''}">
             <div class="record-badge" style="background:${color}">第 ${r.session_number} 次</div>
@@ -110,7 +121,7 @@ function renderRecords(records) {
                         <span class="time-value ${sleeping ? 'still-sleeping' : ''}">${sleeping ? '睡眠中' : formatTime(r.sleep_end)}</span>
                     </div>
                 </div>
-                <div class="record-duration">${sleeping ? '—' : formatDuration(r.duration_minutes)}</div>
+                <div class="record-duration">${durText}</div>
             </div>
             <div class="record-actions">
                 <button class="btn-icon" onclick="startEdit('${r.id}')" title="編輯">✏️</button>
@@ -125,6 +136,7 @@ function resetForm() {
     document.getElementById('record-form').reset();
     document.getElementById('sleep-start').value = nowLocalInput();
     document.getElementById('sleep-end').value = '';
+    document.getElementById('interruption-minutes').value = '0';
     document.getElementById('form-title').textContent = '新增記錄';
     document.getElementById('cancel-edit').style.display = 'none';
     document.getElementById('submit-btn').textContent = '儲存記錄';
@@ -144,6 +156,7 @@ async function startEdit(id) {
         document.getElementById('session-number').value = r.session_number;
         document.getElementById('sleep-start').value = formatToInput(new Date(r.sleep_start));
         document.getElementById('sleep-end').value = r.sleep_end ? formatToInput(new Date(r.sleep_end)) : '';
+        document.getElementById('interruption-minutes').value = r.interruption_minutes || 0;
         document.getElementById('form-title').textContent = `編輯第 ${r.session_number} 次記錄`;
         document.getElementById('cancel-edit').style.display = 'inline-flex';
         document.getElementById('submit-btn').textContent = '更新記錄';
@@ -166,11 +179,17 @@ function onStartChange() {
 function updateDurationPreview() {
     const s = document.getElementById('sleep-start').value;
     const e = document.getElementById('sleep-end').value;
+    const interrupt = parseInt(document.getElementById('interruption-minutes').value) || 0;
     const el = document.getElementById('duration-preview');
     if (s && e) {
         const mins = calcDuration(inputToUTC(s), inputToUTC(e));
         if (mins > 0) {
-            el.textContent = `預計時長：${formatDuration(mins)}`;
+            if (interrupt > 0) {
+                const effective = Math.max(mins - interrupt, 0);
+                el.textContent = `時長：${formatDuration(mins)} − ${interrupt}分 = ${formatDuration(effective)}`;
+            } else {
+                el.textContent = `時長：${formatDuration(mins)}`;
+            }
             el.className = 'duration-preview ok';
         } else {
             el.textContent = '⚠ 起床時間需晚於睡著時間';
@@ -188,6 +207,7 @@ async function handleSubmit(e) {
     const sn = parseInt(document.getElementById('session-number').value);
     const startVal = document.getElementById('sleep-start').value;
     const endVal = document.getElementById('sleep-end').value;
+    const interrupt = Math.max(parseInt(document.getElementById('interruption-minutes').value) || 0, 0);
 
     if (!startVal) { showToast('請填寫睡著時間', 'error'); return; }
 
@@ -213,6 +233,7 @@ async function handleSubmit(e) {
         sleep_start: startUtc,
         sleep_end: endUtc,
         duration_minutes: duration,
+        interruption_minutes: interrupt,
         logical_date: logicalDate
     };
 
@@ -232,6 +253,7 @@ async function handleSubmit(e) {
         document.getElementById('record-form').reset();
         document.getElementById('sleep-start').value = nowLocalInput();
         document.getElementById('sleep-end').value = '';
+        document.getElementById('interruption-minutes').value = '0';
         document.getElementById('form-title').textContent = '新增記錄';
         document.getElementById('cancel-edit').style.display = 'none';
         document.getElementById('submit-btn').textContent = '儲存記錄';
