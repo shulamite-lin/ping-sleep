@@ -258,6 +258,7 @@ async function handleSubmit(e) {
         document.getElementById('cancel-edit').style.display = 'none';
         document.getElementById('submit-btn').textContent = '儲存記錄';
         document.getElementById('duration-preview').textContent = '';
+        btn.disabled = false;
         onStartChange();
 
         currentLogicalDate = logicalDate;

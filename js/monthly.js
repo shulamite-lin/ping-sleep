@@ -61,7 +61,7 @@ function renderTable(records) {
     const summaryEl = document.getElementById('month-summary');
 
     if (records.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="state-msg">本月尚無睡眠記錄</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="state-msg">本月尚無睡眠記錄</td></tr>';
         summaryEl.innerHTML = '';
         return;
     }
@@ -73,6 +73,7 @@ function renderTable(records) {
 
     const rows = sortedDates.map(date => {
         const dayRecs = byDate[date].sort((a, b) => a.session_number - b.session_number);
+        const dayInterrupt = dayRecs.reduce((s, r) => s + (r.interruption_minutes || 0), 0);
         const dayTotal = dayRecs.reduce((s, r) => {
             const effective = (r.duration_minutes || 0) - (r.interruption_minutes || 0);
             return s + Math.max(effective, 0);
@@ -89,9 +90,14 @@ function renderTable(records) {
             return `<td class="session-cell"><span class="sn-dot sn${n}"></span>${s}→${e}${dur}</td>`;
         }).join('');
 
+        const interruptCell = dayInterrupt > 0
+            ? `<td class="interrupt-cell">−${dayInterrupt} 分</td>`
+            : `<td class="session-empty">—</td>`;
+
         return `<tr>
             <td class="date-cell">${formatLogicalDate(date)}</td>
             ${sessionCells}
+            ${interruptCell}
             <td class="total-cell">${dayTotal > 0 ? formatDuration(dayTotal) : '—'}</td>
         </tr>`;
     }).join('');

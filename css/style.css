@@ -11,8 +11,8 @@
     --pink: #f472b6;
     --red: #f87171;
     --text: #e2e8f0;
-    --muted: #94a3b8;
-    --faint: #475569;
+    --muted: #b0bfd4;
+    --faint: #7a8fa8;
     --radius: 12px;
     --radius-sm: 8px;
     --shadow: 0 4px 24px rgba(0,0,0,0.35);
@@ -243,7 +243,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 .time-label {
     font-size: 0.7rem;
-    color: var(--faint);
+    color: var(--muted);
     line-height: 1;
 }
 
@@ -625,6 +625,11 @@ select.form-control {
 .session-empty { color: var(--faint); }
 
 .dur-small { color: var(--muted); font-size: 0.72rem; }
+
+.interrupt-cell {
+    color: var(--orange);
+    font-size: 0.82rem;
+}
 
 .total-cell {
     font-weight: 700;
