@@ -566,6 +566,10 @@ select.form-control {
     position: relative;
 }
 
+.chart-wrap--tall {
+    height: 280px;
+}
+
 /* 月報表格 */
 .table-section {
     background: var(--card);

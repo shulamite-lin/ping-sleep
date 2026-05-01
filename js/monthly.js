@@ -1,5 +1,6 @@
 let curYear, curMonth;
 let chartInstance = null;
+let scheduleChartInstance = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     const { year, month } = getCurrentYearMonth();
@@ -42,6 +43,7 @@ async function loadMonthData() {
         const records = await getRecordsByMonth(curYear, curMonth);
         renderTable(records);
         renderChart(records);
+        renderSleepScheduleChart(records);
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="6" class="state-msg error">${e.message}</td></tr>`;
     }
@@ -179,6 +181,132 @@ function renderChart(records) {
                         maxTicksLimit: 16
                     },
                     grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+function renderSleepScheduleChart(records) {
+    const canvas = document.getElementById('schedule-chart');
+    if (scheduleChartInstance) { scheduleChartInstance.destroy(); scheduleChartInstance = null; }
+    if (records.length === 0) return;
+
+    const SESSION_COLORS = [
+        { bg: 'rgba(129,140,248,0.75)', border: '#818cf8' },
+        { bg: 'rgba(52,211,153,0.75)',  border: '#34d399' },
+        { bg: 'rgba(251,146,60,0.75)',  border: '#fb923c' },
+        { bg: 'rgba(244,114,182,0.75)', border: '#f472b6' },
+    ];
+
+    const lastDay = new Date(curYear, curMonth, 0).getDate();
+    const labels = Array.from({ length: lastDay }, (_, i) => String(i + 1));
+
+    // byDate[logical_date][session_number] = record（已有 sleep_end 的才收錄）
+    const byDate = {};
+    records.forEach(r => {
+        if (!r.sleep_end) return;
+        if (!byDate[r.logical_date]) byDate[r.logical_date] = {};
+        byDate[r.logical_date][r.session_number] = r;
+    });
+
+    const sessionData = [[], [], [], []];
+
+    for (let d = 1; d <= lastDay; d++) {
+        const key = `${curYear}-${String(curMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dayMap = byDate[key] || {};
+
+        for (let sn = 1; sn <= 4; sn++) {
+            const r = dayMap[sn];
+            if (!r) { sessionData[sn - 1].push(null); continue; }
+
+            const sp = _twParts(new Date(r.sleep_start));
+            const ep = _twParts(new Date(r.sleep_end));
+
+            const sh = sp.hour === '24' ? 0 : parseInt(sp.hour);
+            const eh = ep.hour === '24' ? 0 : parseInt(ep.hour);
+            const startDec = sh + parseInt(sp.minute) / 60;
+            let   endDec   = eh + parseInt(ep.minute) / 60;
+
+            if (endDec <= startDec) endDec += 24;
+
+            sessionData[sn - 1].push([startDec, endDec]);
+        }
+    }
+
+    const toHHmm = dec => {
+        const h = Math.floor(dec) % 24;
+        const m = Math.round((dec % 1) * 60);
+        const prefix = dec >= 24 ? '翌' : '';
+        return `${prefix}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    };
+
+    const datasets = SESSION_COLORS.map((c, i) => ({
+        label: `第 ${i + 1} 次`,
+        data: sessionData[i],
+        backgroundColor: c.bg,
+        borderColor: c.border,
+        borderWidth: 1,
+        borderRadius: 3,
+        borderSkipped: false,
+        barPercentage: 0.7,
+        categoryPercentage: 0.9,
+    }));
+
+    scheduleChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#94a3b8',
+                        font: { size: 11 },
+                        boxWidth: 12,
+                        padding: 12,
+                        filter: (item, chartData) =>
+                            chartData.datasets[item.datasetIndex].data.some(v => v !== null)
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: ctx => `${curMonth}月${labels[ctx[0].dataIndex]}日`,
+                        label: ctx => {
+                            const v = ctx.raw;
+                            if (!v) return null;
+                            return `第${ctx.datasetIndex + 1}次：${toHHmm(v[0])} → ${toHHmm(v[1])}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grouped: false,
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 10 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 16
+                    },
+                    grid: { display: false }
+                },
+                y: {
+                    min: 0,
+                    max: 30,
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 11 },
+                        stepSize: 6,
+                        callback: value => ({ 0: '00:00', 6: '06:00', 12: '12:00', 18: '18:00', 24: '翌00:00', 30: '翌06:00' }[value] ?? '')
+                    },
+                    grid: {
+                        color: ctx => ctx.tick.value === 24 ? 'rgba(129,140,248,0.2)' : 'rgba(148,163,184,0.08)'
+                    }
                 }
             }
         }
