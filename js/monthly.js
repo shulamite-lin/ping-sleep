@@ -225,20 +225,25 @@ function renderSleepScheduleChart(records) {
 
             const sh = sp.hour === '24' ? 0 : parseInt(sp.hour);
             const eh = ep.hour === '24' ? 0 : parseInt(ep.hour);
-            const startDec = sh + parseInt(sp.minute) / 60;
-            let   endDec   = eh + parseInt(ep.minute) / 60;
-
-            if (endDec <= startDec) endDec += 24;
+            // 邏輯日從 18:00 開始：0~17 點屬於隔天早晨，+24 放到正確位置
+            const toLogical = (h, m) => (h >= 18 ? h : h + 24) + m / 60;
+            const startDec = toLogical(sh, parseInt(sp.minute));
+            let   endDec   = toLogical(eh, parseInt(ep.minute));
+            // 起床時間落在下一個邏輯日（例如 16:15→18:04），再 +24 往上延伸
+            if (endDec < startDec) endDec += 24;
 
             sessionData[sn - 1].push([startDec, endDec]);
         }
     }
 
+    // Y 軸最大值：至少 42，若有跨邏輯日的記錄則動態延伸
+    let yMax = 42;
+    sessionData.forEach(arr => arr.forEach(v => { if (v) yMax = Math.max(yMax, Math.ceil(v[1])); }));
+
     const toHHmm = dec => {
         const h = Math.floor(dec) % 24;
         const m = Math.round((dec % 1) * 60);
-        const prefix = dec >= 24 ? '翌' : '';
-        return `${prefix}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     };
 
     const datasets = SESSION_COLORS.map((c, i) => ({
@@ -249,14 +254,15 @@ function renderSleepScheduleChart(records) {
         borderWidth: 1,
         borderRadius: 3,
         borderSkipped: false,
-        barPercentage: 0.7,
-        categoryPercentage: 0.9,
+        barPercentage: 0.9,
+        categoryPercentage: 0.8,
     }));
 
     scheduleChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: { labels, datasets },
         options: {
+            grouped: false,   // 同一日期的所有次數疊在同一直線（Chart.js v4 頂層設定）
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -285,7 +291,6 @@ function renderSleepScheduleChart(records) {
             },
             scales: {
                 x: {
-                    grouped: false,
                     ticks: {
                         color: '#94a3b8',
                         font: { size: 10 },
@@ -296,13 +301,13 @@ function renderSleepScheduleChart(records) {
                     grid: { display: false }
                 },
                 y: {
-                    min: 0,
-                    max: 30,
+                    min: 18,
+                    max: yMax,
                     ticks: {
                         color: '#94a3b8',
                         font: { size: 11 },
-                        stepSize: 6,
-                        callback: value => ({ 0: '00:00', 6: '06:00', 12: '12:00', 18: '18:00', 24: '翌00:00', 30: '翌06:00' }[value] ?? '')
+                        stepSize: 2,
+                        callback: value => `${String(value % 24).padStart(2, '0')}:00`
                     },
                     grid: {
                         color: ctx => ctx.tick.value === 24 ? 'rgba(129,140,248,0.2)' : 'rgba(148,163,184,0.08)'
