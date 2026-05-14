@@ -36,7 +36,7 @@ function updateMonthDisplay() {
 
 async function loadMonthData() {
     const tbody = document.getElementById('month-table-body');
-    tbody.innerHTML = '<tr><td colspan="6" class="state-msg">載入中⋯</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="state-msg">載入中⋯</td></tr>';
     document.getElementById('month-summary').innerHTML = '';
 
     try {
@@ -45,7 +45,7 @@ async function loadMonthData() {
         renderChart(records);
         renderSleepScheduleChart(records);
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="state-msg error">${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="state-msg error">${e.message}</td></tr>`;
     }
 }
 
@@ -63,7 +63,7 @@ function renderTable(records) {
     const summaryEl = document.getElementById('month-summary');
 
     if (records.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="state-msg">本月尚無睡眠記錄</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="state-msg">本月尚無睡眠記錄</td></tr>';
         summaryEl.innerHTML = '';
         return;
     }
@@ -197,6 +197,7 @@ function renderSleepScheduleChart(records) {
         { bg: 'rgba(52,211,153,0.75)',  border: '#34d399' },
         { bg: 'rgba(251,146,60,0.75)',  border: '#fb923c' },
         { bg: 'rgba(244,114,182,0.75)', border: '#f472b6' },
+        { bg: 'rgba(56,189,248,0.75)',  border: '#38bdf8' },
     ];
 
     const lastDay = new Date(curYear, curMonth, 0).getDate();
@@ -210,13 +211,13 @@ function renderSleepScheduleChart(records) {
         byDate[r.logical_date][r.session_number] = r;
     });
 
-    const sessionData = [[], [], [], []];
+    const sessionData = [[], [], [], [], []];
 
     for (let d = 1; d <= lastDay; d++) {
         const key = `${curYear}-${String(curMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const dayMap = byDate[key] || {};
 
-        for (let sn = 1; sn <= 4; sn++) {
+        for (let sn = 1; sn <= 5; sn++) {
             const r = dayMap[sn];
             if (!r) { sessionData[sn - 1].push(null); continue; }
 

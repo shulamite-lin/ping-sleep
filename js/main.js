@@ -96,7 +96,7 @@ function renderRecords(records) {
     }, 0);
     totalEl.textContent = totalMin > 0 ? formatDuration(totalMin) : '（有未完成記錄）';
 
-    const colors = ['#818cf8', '#34d399', '#fb923c', '#f472b6'];
+    const colors = ['#818cf8', '#34d399', '#fb923c', '#f472b6', '#38bdf8'];
     container.innerHTML = records.map(r => {
         const color = colors[(r.session_number - 1) % colors.length];
         const sleeping = !r.sleep_end;
