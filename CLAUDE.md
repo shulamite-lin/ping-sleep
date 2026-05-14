@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案說明
 
-「平平睡眠記錄」是一個靜態網頁應用，用於記錄特殊作息（每天最多 4 次睡眠），資料儲存於 Supabase，部署於 GitHub Pages。
+「平平睡眠記錄」是一個靜態網頁應用，用於記錄特殊作息（每天最多 5 次睡眠），資料儲存於 Supabase，部署於 GitHub Pages。
 
 **無建置流程**：純 HTML + CSS + Vanilla JS，不需要 npm / build step。
 
@@ -64,18 +64,20 @@ config.js → utils.js → db.js → main.js（或 monthly.js）
 CREATE TABLE sleep_records (
   id                  UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   logical_date        DATE         NOT NULL,          -- 邏輯日 (YYYY-MM-DD)
-  session_number      INTEGER      NOT NULL CHECK (session_number BETWEEN 1 AND 4),
+  session_number      INTEGER      NOT NULL CHECK (session_number BETWEEN 1 AND 5),
   sleep_start         TIMESTAMPTZ  NOT NULL,           -- 睡著時間 (UTC)
   sleep_end           TIMESTAMPTZ,                     -- 起床時間 (UTC，可為 null 表示睡眠中)
   duration_minutes    INTEGER,                         -- sleep_end - sleep_start，分鐘
-  interruption_minutes INTEGER DEFAULT 0,             -- 零碎起床時長（分鐘，從 duration 中扣除）
+  interruption_minutes INTEGER DEFAULT 0,             -- 零碎時長（正=零碎睡眠加入；負=零碎起床扣除）
   created_at          TIMESTAMPTZ DEFAULT NOW(),
   updated_at          TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(logical_date, session_number)
 );
 ```
 
-**有效睡眠時長** = `duration_minutes - interruption_minutes`（每日合計取最大值 0）。
+**有效睡眠時長** = `duration_minutes + interruption_minutes`（每日合計取最大值 0）。
+- `interruption_minutes` 為正數：零碎睡眠時長，加入有效時長
+- `interruption_minutes` 為負數：零碎起床時長，從有效時長扣除
 
 ## 時間處理原則
 

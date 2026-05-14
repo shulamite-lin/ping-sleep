@@ -55,6 +55,7 @@
                         <option value="2">第 2 次</option>
                         <option value="3">第 3 次</option>
                         <option value="4">第 4 次</option>
+                        <option value="5">第 5 次</option>
                     </select>
                 </div>
                 <div class="form-group logical-date-group">
@@ -77,10 +78,10 @@
             <div class="form-row-2">
                 <div class="form-group">
                     <label class="form-label" for="interruption-minutes">
-                        零碎起床時長 <span class="optional">（分鐘）</span>
+                        零碎時長 <span class="optional">（分鐘，正:睡眠 / 負:起床）</span>
                     </label>
                     <input class="form-control" type="number" id="interruption-minutes"
-                           min="0" step="1" value="0" placeholder="0">
+                           step="1" value="0" placeholder="正:睡眠 / 負:起床">
                 </div>
                 <div class="form-group" style="display:flex;align-items:flex-end;">
                     <div id="duration-preview" class="duration-preview" style="padding-bottom:0.65rem;"></div>

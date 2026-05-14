@@ -77,13 +77,13 @@ function renderTable(records) {
         const dayRecs = byDate[date].sort((a, b) => a.session_number - b.session_number);
         const dayInterrupt = dayRecs.reduce((s, r) => s + (r.interruption_minutes || 0), 0);
         const dayTotal = dayRecs.reduce((s, r) => {
-            const effective = (r.duration_minutes || 0) - (r.interruption_minutes || 0);
+            const effective = (r.duration_minutes || 0) + (r.interruption_minutes || 0);
             return s + Math.max(effective, 0);
         }, 0);
         totalMonthMin += dayTotal;
         dailyTotals.push(dayTotal);
 
-        const sessionCells = [1, 2, 3, 4].map(n => {
+        const sessionCells = [1, 2, 3, 4, 5].map(n => {
             const r = dayRecs.find(x => x.session_number === n);
             if (!r) return '<td class="session-empty">—</td>';
             const s = formatTime(r.sleep_start);
@@ -92,8 +92,8 @@ function renderTable(records) {
             return `<td class="session-cell"><span class="sn-dot sn${n}"></span>${s}→${e}${dur}</td>`;
         }).join('');
 
-        const interruptCell = dayInterrupt > 0
-            ? `<td class="interrupt-cell">−${dayInterrupt} 分</td>`
+        const interruptCell = dayInterrupt !== 0
+            ? `<td class="interrupt-cell">${dayInterrupt > 0 ? '+' : ''}${dayInterrupt} 分</td>`
             : `<td class="session-empty">—</td>`;
 
         return `<tr>
@@ -128,7 +128,7 @@ function renderChart(records) {
 
     const byDate = {};
     records.forEach(r => {
-        const effective = Math.max((r.duration_minutes || 0) - (r.interruption_minutes || 0), 0);
+        const effective = Math.max((r.duration_minutes || 0) + (r.interruption_minutes || 0), 0);
         byDate[r.logical_date] = (byDate[r.logical_date] || 0) + effective;
     });
 

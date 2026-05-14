@@ -654,6 +654,7 @@ select.form-control {
 .sn2 { background: #34d399; }
 .sn3 { background: #fb923c; }
 .sn4 { background: #f472b6; }
+.sn5 { background: #38bdf8; }
 
 /* ===== 行動裝置調整 ===== */
 @media (max-width: 480px) {

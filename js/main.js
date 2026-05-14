@@ -71,7 +71,7 @@ async function loadRecords() {
         renderRecords(records);
         if (!editingId) {
             const maxSn = records.reduce((max, r) => Math.max(max, r.session_number), 0);
-            document.getElementById('session-number').value = Math.min(maxSn + 1, 4);
+            document.getElementById('session-number').value = Math.min(maxSn + 1, 5);
         }
     } catch (e) {
         console.error('[Supabase] loadRecords error:', e);
@@ -91,7 +91,7 @@ function renderRecords(records) {
     }
 
     const totalMin = records.reduce((s, r) => {
-        const effective = (r.duration_minutes || 0) - (r.interruption_minutes || 0);
+        const effective = (r.duration_minutes || 0) + (r.interruption_minutes || 0);
         return s + Math.max(effective, 0);
     }, 0);
     totalEl.textContent = totalMin > 0 ? formatDuration(totalMin) : '（有未完成記錄）';
@@ -101,10 +101,12 @@ function renderRecords(records) {
         const color = colors[(r.session_number - 1) % colors.length];
         const sleeping = !r.sleep_end;
         const interrupt = r.interruption_minutes || 0;
-        const effectiveMins = r.duration_minutes != null ? r.duration_minutes - interrupt : null;
+        const effectiveMins = r.duration_minutes != null ? r.duration_minutes + interrupt : null;
         const durText = sleeping ? '—'
-            : interrupt > 0
-                ? `${formatDuration(r.duration_minutes)} − ${interrupt}分 = ${formatDuration(effectiveMins)}`
+            : interrupt !== 0
+                ? interrupt > 0
+                    ? `${formatDuration(r.duration_minutes)} + ${interrupt}分 = ${formatDuration(effectiveMins)}`
+                    : `${formatDuration(r.duration_minutes)} − ${Math.abs(interrupt)}分 = ${formatDuration(effectiveMins)}`
                 : formatDuration(r.duration_minutes);
         return `
         <div class="record-card ${sleeping ? 'sleeping' : ''} ${editingId === r.id ? 'editing' : ''}">
@@ -184,9 +186,12 @@ function updateDurationPreview() {
     if (s && e) {
         const mins = calcDuration(inputToUTC(s), inputToUTC(e));
         if (mins > 0) {
-            if (interrupt > 0) {
-                const effective = Math.max(mins - interrupt, 0);
-                el.textContent = `時長：${formatDuration(mins)} − ${interrupt}分 = ${formatDuration(effective)}`;
+            if (interrupt !== 0) {
+                const effective = Math.max(mins + interrupt, 0);
+                const sign = interrupt > 0
+                    ? `+ ${interrupt}分`
+                    : `− ${Math.abs(interrupt)}分`;
+                el.textContent = `時長：${formatDuration(mins)} ${sign} = ${formatDuration(effective)}`;
             } else {
                 el.textContent = `時長：${formatDuration(mins)}`;
             }
@@ -207,7 +212,7 @@ async function handleSubmit(e) {
     const sn = parseInt(document.getElementById('session-number').value);
     const startVal = document.getElementById('sleep-start').value;
     const endVal = document.getElementById('sleep-end').value;
-    const interrupt = Math.max(parseInt(document.getElementById('interruption-minutes').value) || 0, 0);
+    const interrupt = parseInt(document.getElementById('interruption-minutes').value) || 0;
 
     if (!startVal) { showToast('請填寫睡著時間', 'error'); return; }
 
