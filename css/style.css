@@ -656,9 +656,23 @@ select.form-control {
 .sn4 { background: #f472b6; }
 .sn5 { background: #38bdf8; }
 
+/* ===== 下載 section ===== */
+.download-section { padding: 1rem; }
+.dl-range { display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
+.dl-range-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.dl-ym-row { display: flex; align-items: center; gap: 0.35rem; }
+.dl-ym-input { width: 4.5rem; text-align: center; -moz-appearance: textfield; }
+.dl-ym-input::-webkit-outer-spin-button,
+.dl-ym-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.dl-ym-input--month { width: 3rem; }
+.dl-ym-sep { font-size: 0.875rem; color: var(--muted); }
+.dl-range-arrow { font-size: 1.2rem; color: var(--faint); padding-bottom: 0.4rem; }
+
 /* ===== 行動裝置調整 ===== */
 @media (max-width: 480px) {
     .record-body { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
     .record-times { flex-wrap: wrap; }
     .modal-box { padding: 1.25rem 1rem; }
+    .dl-range { flex-direction: column; gap: 0.75rem; }
+    .dl-range-arrow { transform: rotate(90deg); padding-bottom: 0; }
 }

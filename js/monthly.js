@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadMonthData();
         }
     });
+
+    initDownloadSection();
 });
 
 function updateMonthDisplay() {
@@ -317,4 +319,90 @@ function renderSleepScheduleChart(records) {
             }
         }
     });
+}
+
+// ===== 下載功能 =====
+
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 5000);
+}
+
+function initDownloadSection() {
+    document.getElementById('dl-start-year').value  = 2026;
+    document.getElementById('dl-start-month').value = 4;
+    const { year, month } = getCurrentYearMonth();
+    document.getElementById('dl-end-year').value  = year;
+    document.getElementById('dl-end-month').value = month;
+    document.getElementById('dl-btn').addEventListener('click', handleDownload);
+}
+
+async function handleDownload() {
+    const startYear  = parseInt(document.getElementById('dl-start-year').value);
+    const startMonth = parseInt(document.getElementById('dl-start-month').value);
+    const endYear    = parseInt(document.getElementById('dl-end-year').value);
+    const endMonth   = parseInt(document.getElementById('dl-end-month').value);
+
+    if (isNaN(startYear) || isNaN(startMonth) || isNaN(endYear) || isNaN(endMonth)) {
+        showToast('請填寫完整的起迄年月', 'error');
+        return;
+    }
+    if (startYear * 100 + startMonth > endYear * 100 + endMonth) {
+        showToast('起始年月不能晚於結束年月', 'error');
+        return;
+    }
+    const { year: nowY, month: nowM } = getCurrentYearMonth();
+    if (endYear * 100 + endMonth > nowY * 100 + nowM) {
+        showToast('結束年月不能超過當下年月', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('dl-btn');
+    btn.disabled = true;
+    btn.textContent = '查詢中⋯';
+
+    try {
+        const records = await getRecordsByDateRange(startYear, startMonth, endYear, endMonth);
+        if (records.length === 0) {
+            showToast('該區間無資料');
+            return;
+        }
+        const csv = buildCSV(records);
+        triggerDownload(csv, startYear, startMonth, endYear, endMonth);
+        showToast(`已下載 ${records.length} 筆記錄`);
+    } catch (e) {
+        showToast(e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '下載 CSV';
+    }
+}
+
+function escapeCsvField(val) {
+    const s = String(val ?? '');
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+}
+
+function buildCSV(records) {
+    const headers = ['id', 'logical_date', 'session_number', 'sleep_start', 'sleep_end',
+                     'duration_minutes', 'interruption_minutes', 'created_at', 'updated_at'];
+    const rows = records.map(r =>
+        headers.map(col => escapeCsvField(r[col] ?? '')).join(',')
+    );
+    return '﻿' + [headers.join(','), ...rows].join('\r\n');
+}
+
+function triggerDownload(csv, sy, sm, ey, em) {
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = `sleep_${sy}${String(sm).padStart(2,'0')}-${ey}${String(em).padStart(2,'0')}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

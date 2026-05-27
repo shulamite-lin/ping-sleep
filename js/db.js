@@ -62,3 +62,20 @@ async function deleteRecord(id) {
         .eq('id', id);
     if (error) throw error;
 }
+
+async function getRecordsByDateRange(startYear, startMonth, endYear, endMonth) {
+    const sm = String(startMonth).padStart(2, '0');
+    const start = `${startYear}-${sm}-01`;
+    const em = String(endMonth).padStart(2, '0');
+    const lastDay = new Date(endYear, endMonth, 0).getDate();
+    const end = `${endYear}-${em}-${String(lastDay).padStart(2, '0')}`;
+    const { data, error } = await getDB()
+        .from('sleep_records')
+        .select('*')
+        .gte('logical_date', start)
+        .lte('logical_date', end)
+        .order('logical_date')
+        .order('session_number');
+    if (error) throw error;
+    return data || [];
+}

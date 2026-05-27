@@ -70,6 +70,37 @@
         </div>
     </div>
 
+    <!-- 下載資料 -->
+    <div class="chart-section download-section">
+        <div class="section-title">下載資料</div>
+        <div class="dl-range">
+            <div class="dl-range-group">
+                <label class="form-label">起始年月</label>
+                <div class="dl-ym-row">
+                    <input class="form-control dl-ym-input" type="number"
+                           id="dl-start-year" min="2020" max="2099">
+                    <span class="dl-ym-sep">年</span>
+                    <input class="form-control dl-ym-input dl-ym-input--month" type="number"
+                           id="dl-start-month" min="1" max="12">
+                    <span class="dl-ym-sep">月</span>
+                </div>
+            </div>
+            <span class="dl-range-arrow">→</span>
+            <div class="dl-range-group">
+                <label class="form-label">結束年月</label>
+                <div class="dl-ym-row">
+                    <input class="form-control dl-ym-input" type="number"
+                           id="dl-end-year" min="2020" max="2099">
+                    <span class="dl-ym-sep">年</span>
+                    <input class="form-control dl-ym-input dl-ym-input--month" type="number"
+                           id="dl-end-month" min="1" max="12">
+                    <span class="dl-ym-sep">月</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary" id="dl-btn" style="margin-top: 1rem;">下載 CSV</button>
+    </div>
+
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -78,5 +109,6 @@
 <script src="js/utils.js"></script>
 <script src="js/db.js"></script>
 <script src="js/monthly.js"></script>
+<div class="toast" id="toast"></div>
 </body>
 </html>
