@@ -317,7 +317,26 @@ function renderSleepScheduleChart(records) {
                     }
                 }
             }
-        }
+        },
+        plugins: [
+            {
+                id: 'normalSleepBand',
+                beforeDatasetsDraw(chart) {
+                    const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
+                    const sleepTop    = y.getPixelForValue(30); // 06:00 次日（邏輯時間 30）
+                    const sleepBottom = y.getPixelForValue(22); // 22:00（邏輯時間 22）
+                    ctx.save();
+                    // 非睡眠時段：淺灰藍
+                    ctx.fillStyle = '#d0dae6';
+                    ctx.fillRect(left, top, right - left, sleepTop - top);               // 06:00 以上
+                    ctx.fillRect(left, sleepBottom, right - left, bottom - sleepBottom); // 22:00 以下
+                    // 正常睡眠時段：中深藍，有別於卡片背景 #1c2740
+                    ctx.fillStyle = '#273d5e';
+                    ctx.fillRect(left, sleepTop, right - left, sleepBottom - sleepTop);
+                    ctx.restore();
+                }
+            }
+        ]
     });
 }
 
