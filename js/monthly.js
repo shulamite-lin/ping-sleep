@@ -27,6 +27,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    const scheduleWrap = document.querySelector('.chart-wrap.chart-wrap--tall');
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    scheduleWrap.addEventListener('touchstart', e => {
+        swipeStartX = e.touches[0].clientX;
+        swipeStartY = e.touches[0].clientY;
+    }, { passive: true });
+    scheduleWrap.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - swipeStartX;
+        const dy = e.changedTouches[0].clientY - swipeStartY;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+            if (dx > 0) {
+                document.getElementById('prev-month').click();
+            } else {
+                document.getElementById('next-month').click();
+            }
+        }
+    }, { passive: true });
+
     initDownloadSection();
 });
 
