@@ -55,19 +55,33 @@ function updateMonthDisplay() {
     document.getElementById('next-month').disabled = (curYear === maxY && curMonth >= maxM);
 }
 
-async function loadMonthData() {
-    const tbody = document.getElementById('month-table-body');
-    tbody.innerHTML = '<tr><td colspan="8" class="state-msg">載入中⋯</td></tr>';
-    document.getElementById('month-summary').innerHTML = '';
+function setContentLoading(loading) {
+    const { year: maxY, month: maxM } = getCurrentYearMonth();
+    document.getElementById('prev-month').disabled = loading;
+    document.getElementById('next-month').disabled = loading || (curYear === maxY && curMonth >= maxM);
+    const targets = [
+        document.getElementById('month-summary'),
+        ...document.querySelectorAll('.chart-section'),
+        document.querySelector('.table-section'),
+    ];
+    targets.forEach(el => {
+        el.classList.toggle('content-loading', loading);
+        el.classList.toggle('content-ready', !loading);
+    });
+}
 
+async function loadMonthData() {
+    setContentLoading(true);
     try {
         const records = await getRecordsByMonth(curYear, curMonth);
         renderTable(records);
         renderChart(records);
         renderSleepScheduleChart(records);
     } catch (e) {
+        const tbody = document.getElementById('month-table-body');
         tbody.innerHTML = `<tr><td colspan="8" class="state-msg error">${e.message}</td></tr>`;
     }
+    setContentLoading(false);
 }
 
 function groupByDate(records) {
