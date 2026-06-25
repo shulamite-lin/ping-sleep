@@ -1,7 +1,7 @@
 let currentLogicalDate = getCurrentLogicalDate();
 let editingId = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // 1. 先同步綁定所有事件（不等待任何 async 操作）
     document.getElementById('prev-day').addEventListener('click', navPrevDay);
     document.getElementById('next-day').addEventListener('click', navNextDay);
@@ -18,7 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('interruption-minutes').value = '0';
     onStartChange();
 
-    // 3. 非同步載入資料
+    // 3. 建立/恢復 auth session，再載入資料
+    await initAuth();
     loadRecords();
 });
 

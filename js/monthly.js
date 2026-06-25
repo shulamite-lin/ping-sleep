@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     curMonth = month;
 
     updateMonthDisplay();
+    await initAuth();
     await loadMonthData();
 
     document.getElementById('prev-month').addEventListener('click', () => {
