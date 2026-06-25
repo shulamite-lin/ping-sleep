@@ -22,11 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create config.js from variables
-        run: printf 'const SUPABASE_URL = "%s";\nconst SUPABASE_ANON_KEY = "%s";\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > js/config.js
-        env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      - name: Create config.js from secrets
+        run: |
+          echo "const SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';" > js/config.js
+          echo "const SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';" >> js/config.js
 
       - uses: actions/configure-pages@v5
 
