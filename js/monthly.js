@@ -162,42 +162,76 @@ function renderChart(records) {
     if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     if (records.length === 0) return;
 
-    const byDate = {};
-    records.forEach(r => {
-        const effective = Math.max((r.duration_minutes || 0) + (r.interruption_minutes || 0), 0);
-        byDate[r.logical_date] = (byDate[r.logical_date] || 0) + effective;
-    });
-
+    const byDate = groupByDate(records);
     const lastDay = new Date(curYear, curMonth, 0).getDate();
-    const labels = [], data = [];
+    const labels = [], sleepData = [], gapData = [], gapMinutesRaw = [];
+
     for (let d = 1; d <= lastDay; d++) {
         const key = `${curYear}-${String(curMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         labels.push(`${d}`);
-        data.push(byDate[key] ? +(byDate[key] / 60).toFixed(2) : 0);
+        const dayRecs = (byDate[key] || []).slice().sort((a, b) => a.session_number - b.session_number);
+
+        const sleepMin = dayRecs.reduce((s, r) => s + Math.max((r.duration_minutes || 0) + (r.interruption_minutes || 0), 0), 0);
+        sleepData.push(sleepMin > 0 ? +(sleepMin / 60).toFixed(2) : 0);
+
+        // 清醒空檔＝當日相鄰兩場睡眠之間「前一場起床→下一場入睡」的分鐘數，取當日平均。
+        // 只計算場次之間的間隔，不含「起床到第一場入睡前」或「最後一場起床到邏輯日結束」；
+        // 前一場尚在睡眠中（sleep_end 為 null）的間隔不計入。只有 0～1 場的日子留空、不畫長條。
+        const gaps = [];
+        for (let i = 0; i < dayRecs.length - 1; i++) {
+            if (dayRecs[i].sleep_end && dayRecs[i + 1].sleep_start) {
+                const gap = (new Date(dayRecs[i + 1].sleep_start) - new Date(dayRecs[i].sleep_end)) / 60000;
+                if (gap >= 0) gaps.push(gap);
+            }
+        }
+        const avgGapMin = gaps.length ? Math.round(gaps.reduce((s, v) => s + v, 0) / gaps.length) : null;
+        gapMinutesRaw.push(avgGapMin);
+        // 換算成小時，跟睡眠時數共用同一個 y 軸
+        gapData.push(avgGapMin != null ? +(avgGapMin / 60).toFixed(2) : null);
     }
 
     chartInstance = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
             labels,
-            datasets: [{
-                label: '睡眠時數',
-                data,
-                backgroundColor: data.map(v => v === 0 ? 'rgba(100,116,139,0.2)' : 'rgba(129,140,248,0.75)'),
-                borderColor: data.map(v => v === 0 ? 'rgba(100,116,139,0.3)' : 'rgba(129,140,248,1)'),
-                borderWidth: 1,
-                borderRadius: 4
-            }]
+            datasets: [
+                {
+                    label: '睡眠時數',
+                    data: sleepData,
+                    backgroundColor: sleepData.map(v => v === 0 ? 'rgba(100,116,139,0.2)' : 'rgba(129,140,248,0.75)'),
+                    borderColor: sleepData.map(v => v === 0 ? 'rgba(100,116,139,0.3)' : 'rgba(129,140,248,1)'),
+                    borderWidth: 1,
+                    borderRadius: 4
+                },
+                {
+                    label: '清醒空檔',
+                    data: gapData,
+                    backgroundColor: 'rgba(251,146,60,0.75)',
+                    borderColor: 'rgba(251,146,60,1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12, padding: 12 }
+                },
                 tooltip: {
                     callbacks: {
                         title: ctx => `${curMonth}月${ctx[0].label}日`,
-                        label: ctx => ctx.raw > 0 ? `${ctx.raw.toFixed(1)} 小時` : '無記錄'
+                        label: ctx => {
+                            if (ctx.datasetIndex === 0) {
+                                return ctx.raw > 0 ? `睡眠時數：${ctx.raw.toFixed(1)} 小時` : '睡眠時數：無記錄';
+                            }
+                            const mins = gapMinutesRaw[ctx.dataIndex];
+                            return mins != null ? `清醒空檔：${mins} 分鐘` : '清醒空檔：無資料';
+                        }
                     }
                 }
             },
@@ -223,6 +257,26 @@ function renderChart(records) {
     });
 }
 
+// 正常睡眠時段（22:00～次日06:00）底色帶
+// （依賴呼叫方 y 軸為「邏輯時間」刻度：18 起算，22:00=22、06:00 次日=30）
+const normalSleepBandPlugin = {
+    id: 'normalSleepBand',
+    beforeDatasetsDraw(chart) {
+        const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
+        const sleepTop    = y.getPixelForValue(30); // 06:00 次日（邏輯時間 30）
+        const sleepBottom = y.getPixelForValue(22); // 22:00（邏輯時間 22）
+        ctx.save();
+        // 非睡眠時段：淺灰藍
+        ctx.fillStyle = '#d0dae6';
+        ctx.fillRect(left, top, right - left, sleepTop - top);               // 06:00 以上
+        ctx.fillRect(left, sleepBottom, right - left, bottom - sleepBottom); // 22:00 以下
+        // 正常睡眠時段：中深藍，有別於卡片背景 #1c2740
+        ctx.fillStyle = '#273d5e';
+        ctx.fillRect(left, sleepTop, right - left, sleepBottom - sleepTop);
+        ctx.restore();
+    }
+};
+
 function renderSleepScheduleChart(records) {
     const canvas = document.getElementById('schedule-chart');
     if (scheduleChartInstance) { scheduleChartInstance.destroy(); scheduleChartInstance = null; }
@@ -247,7 +301,13 @@ function renderSleepScheduleChart(records) {
         byDate[r.logical_date][r.session_number] = r;
     });
 
+    // 每日第 1 次入睡時刻（不限已結束，含睡眠中的紀錄）
+    const byDateAll = groupByDate(records);
+
+    const toLogical = (h, m) => (h >= 18 ? h : h + 24) + m / 60;
+
     const sessionData = [[], [], [], [], []];
+    const onsetData = [];
 
     for (let d = 1; d <= lastDay; d++) {
         const key = `${curYear}-${String(curMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -263,7 +323,6 @@ function renderSleepScheduleChart(records) {
             const sh = sp.hour === '24' ? 0 : parseInt(sp.hour);
             const eh = ep.hour === '24' ? 0 : parseInt(ep.hour);
             // 邏輯日從 18:00 開始：0~17 點屬於隔天早晨，+24 放到正確位置
-            const toLogical = (h, m) => (h >= 18 ? h : h + 24) + m / 60;
             const startDec = toLogical(sh, parseInt(sp.minute));
             let   endDec   = toLogical(eh, parseInt(ep.minute));
             // 起床時間落在下一個邏輯日（例如 16:15→18:04），再 +24 往上延伸
@@ -271,11 +330,19 @@ function renderSleepScheduleChart(records) {
 
             sessionData[sn - 1].push([startDec, endDec]);
         }
+
+        const dayRecsAll = (byDateAll[key] || []).slice().sort((a, b) => a.session_number - b.session_number);
+        const first = dayRecsAll[0];
+        if (!first) { onsetData.push(null); continue; }
+        const fp = _twParts(new Date(first.sleep_start));
+        const fh = fp.hour === '24' ? 0 : parseInt(fp.hour);
+        onsetData.push(toLogical(fh, parseInt(fp.minute)));
     }
 
     // Y 軸最大值：至少 42，若有跨邏輯日的記錄則動態延伸
     let yMax = 42;
     sessionData.forEach(arr => arr.forEach(v => { if (v) yMax = Math.max(yMax, Math.ceil(v[1])); }));
+    onsetData.forEach(v => { if (v != null) yMax = Math.max(yMax, Math.ceil(v)); });
 
     const toHHmm = dec => {
         const h = Math.floor(dec) % 24;
@@ -294,6 +361,24 @@ function renderSleepScheduleChart(records) {
         barPercentage: 0.9,
         categoryPercentage: 0.8,
     }));
+
+    // 入睡時刻趨勢線疊加在最上層
+    datasets.push({
+        type: 'line',
+        label: '入睡時刻趨勢',
+        data: onsetData,
+        borderColor: '#f8fafc',
+        backgroundColor: '#f8fafc',
+        pointBackgroundColor: '#f8fafc',
+        pointBorderColor: '#0b1120',
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderWidth: 2,
+        spanGaps: true,
+        tension: 0.15,
+        fill: false,
+        order: -1,
+    });
 
     scheduleChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'bar',
@@ -320,8 +405,9 @@ function renderSleepScheduleChart(records) {
                         title: ctx => `${curMonth}月${labels[ctx[0].dataIndex]}日`,
                         label: ctx => {
                             const v = ctx.raw;
-                            if (!v) return null;
-                            return `第${ctx.datasetIndex + 1}次：${toHHmm(v[0])} → ${toHHmm(v[1])}`;
+                            if (v == null) return null;
+                            if (Array.isArray(v)) return `第${ctx.datasetIndex + 1}次：${toHHmm(v[0])} → ${toHHmm(v[1])}`;
+                            return `入睡時刻：${toHHmm(v)}`;
                         }
                     }
                 }
@@ -352,25 +438,7 @@ function renderSleepScheduleChart(records) {
                 }
             }
         },
-        plugins: [
-            {
-                id: 'normalSleepBand',
-                beforeDatasetsDraw(chart) {
-                    const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
-                    const sleepTop    = y.getPixelForValue(30); // 06:00 次日（邏輯時間 30）
-                    const sleepBottom = y.getPixelForValue(22); // 22:00（邏輯時間 22）
-                    ctx.save();
-                    // 非睡眠時段：淺灰藍
-                    ctx.fillStyle = '#d0dae6';
-                    ctx.fillRect(left, top, right - left, sleepTop - top);               // 06:00 以上
-                    ctx.fillRect(left, sleepBottom, right - left, bottom - sleepBottom); // 22:00 以下
-                    // 正常睡眠時段：中深藍，有別於卡片背景 #1c2740
-                    ctx.fillStyle = '#273d5e';
-                    ctx.fillRect(left, sleepTop, right - left, sleepBottom - sleepTop);
-                    ctx.restore();
-                }
-            }
-        ]
+        plugins: [normalSleepBandPlugin]
     });
 }
 

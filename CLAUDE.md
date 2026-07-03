@@ -58,6 +58,17 @@ config.js → utils.js → db.js → main.js（或 monthly.js）
 
 計算邏輯在 `js/utils.js` 的 `getLogicalDate(localStr)` 函式。
 
+## 月報頁衍生指標
+
+**清醒空檔**（`monthly.html` 的「每日睡眠時數 / 清醒空檔」圖，橘色長條）：
+同一邏輯日內，相鄰兩場睡眠之間「前一場起床（`sleep_end`）→ 下一場入睡（`sleep_start`）」的分鐘數，取當日平均。
+
+- 只計算「場次之間」的間隔，不含「起床到第一場入睡前」或「最後一場起床到邏輯日結束（隔天 18:00）」這兩段。
+- 前一場尚在睡眠中（`sleep_end` 為 null）的間隔不計入。
+- 當日只有 0～1 場記錄時無法計算間隔，圖上留空、不畫長條。
+
+計算邏輯在 `js/monthly.js` 的 `renderChart()` 函式內。
+
 ## 資料庫 Schema
 
 ```sql
