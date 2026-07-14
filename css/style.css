@@ -273,6 +273,16 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     font-variant-numeric: tabular-nums;
 }
 
+.record-memo {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px dashed var(--border);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .record-actions {
     display: flex;
     gap: 0.25rem;
@@ -409,6 +419,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(129,140,248,0.15);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 2.75rem;
+    font-family: inherit;
 }
 
 select.form-control {

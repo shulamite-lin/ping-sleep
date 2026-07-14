@@ -82,6 +82,7 @@ CREATE TABLE sleep_records (
   interruption_minutes INTEGER DEFAULT 0,             -- 零碎時長（正=零碎睡眠加入；負=零碎起床扣除）
   created_at          TIMESTAMPTZ DEFAULT NOW(),
   updated_at          TIMESTAMPTZ DEFAULT NOW(),
+  memo                TEXT,                            -- 備註，可為 null
   UNIQUE(logical_date, session_number)
 );
 ```

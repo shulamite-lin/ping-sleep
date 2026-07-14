@@ -23,6 +23,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadRecords();
 });
 
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML.replace(/\n/g, '<br>');
+}
+
 function toDateStr(date) {
     return [
         date.getFullYear(),
@@ -109,6 +115,7 @@ function renderRecords(records) {
                     ? `${formatDuration(r.duration_minutes)} + ${interrupt}分 = ${formatDuration(effectiveMins)}`
                     : `${formatDuration(r.duration_minutes)} − ${Math.abs(interrupt)}分 = ${formatDuration(effectiveMins)}`
                 : formatDuration(r.duration_minutes);
+        const memoHtml = r.memo ? `<div class="record-memo">${escapeHtml(r.memo)}</div>` : '';
         return `
         <div class="record-card ${sleeping ? 'sleeping' : ''} ${editingId === r.id ? 'editing' : ''}">
             <div class="record-badge" style="background:${color}">第 ${r.session_number} 次</div>
@@ -125,6 +132,7 @@ function renderRecords(records) {
                     </div>
                 </div>
                 <div class="record-duration">${durText}</div>
+                ${memoHtml}
             </div>
             <div class="record-actions">
                 <button class="btn-icon" onclick="startEdit('${r.id}')" title="編輯">✏️</button>
@@ -140,6 +148,7 @@ function resetForm() {
     document.getElementById('sleep-start').value = nowLocalInput();
     document.getElementById('sleep-end').value = '';
     document.getElementById('interruption-minutes').value = '0';
+    document.getElementById('memo').value = '';
     document.getElementById('form-title').textContent = '新增記錄';
     document.getElementById('cancel-edit').style.display = 'none';
     document.getElementById('submit-btn').textContent = '儲存記錄';
@@ -160,6 +169,7 @@ async function startEdit(id) {
         document.getElementById('sleep-start').value = formatToInput(new Date(r.sleep_start));
         document.getElementById('sleep-end').value = r.sleep_end ? formatToInput(new Date(r.sleep_end)) : '';
         document.getElementById('interruption-minutes').value = r.interruption_minutes || 0;
+        document.getElementById('memo').value = r.memo || '';
         document.getElementById('form-title').textContent = `編輯第 ${r.session_number} 次記錄`;
         document.getElementById('cancel-edit').style.display = 'inline-flex';
         document.getElementById('submit-btn').textContent = '更新記錄';
@@ -214,6 +224,7 @@ async function handleSubmit(e) {
     const startVal = document.getElementById('sleep-start').value;
     const endVal = document.getElementById('sleep-end').value;
     const interrupt = parseInt(document.getElementById('interruption-minutes').value) || 0;
+    const memoVal = document.getElementById('memo').value.trim();
 
     if (!startVal) { showToast('請填寫睡著時間', 'error'); return; }
 
@@ -240,7 +251,8 @@ async function handleSubmit(e) {
         sleep_end: endUtc,
         duration_minutes: duration,
         interruption_minutes: interrupt,
-        logical_date: logicalDate
+        logical_date: logicalDate,
+        memo: memoVal || null
     };
 
     console.log('[Supabase] saving:', JSON.stringify(payload));
@@ -260,6 +272,7 @@ async function handleSubmit(e) {
         document.getElementById('sleep-start').value = nowLocalInput();
         document.getElementById('sleep-end').value = '';
         document.getElementById('interruption-minutes').value = '0';
+        document.getElementById('memo').value = '';
         document.getElementById('form-title').textContent = '新增記錄';
         document.getElementById('cancel-edit').style.display = 'none';
         document.getElementById('submit-btn').textContent = '儲存記錄';
